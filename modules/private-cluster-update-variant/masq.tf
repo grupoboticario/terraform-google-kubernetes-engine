@@ -1,5 +1,5 @@
 /**
- * Copyright 2018 Google LLC
+ * Copyright 2022 Google LLC
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,7 +19,7 @@
 /******************************************
   Create ip-masq-agent confimap
  *****************************************/
-resource "kubernetes_config_map" "ip-masq-agent" {
+resource "kubernetes_config_map" "ip_masq_agent" {
   count = var.configure_ip_masq ? 1 : 0
 
   metadata {

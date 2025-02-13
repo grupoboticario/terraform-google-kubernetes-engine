@@ -49,7 +49,13 @@ variable "location" {
 }
 
 variable "k8s_sa_name" {
-  description = "Name for the Kubernetes service account; overrides `var.name`."
+  description = "Name for the Kubernetes service account; overrides `var.name`. `cluster_name` and `location` must be set when this input is specified."
+  type        = string
+  default     = null
+}
+
+variable "k8s_sa_project_id" {
+  description = "GCP project ID of the k8s service account; overrides `var.project_id`."
   type        = string
   default     = null
 }
@@ -88,4 +94,52 @@ variable "impersonate_service_account" {
   description = "An optional service account to impersonate for gcloud commands. If this service account is not specified, the module will use Application Default Credentials."
   type        = string
   default     = ""
+}
+
+variable "use_existing_context" {
+  description = "An optional flag to use local kubectl config context."
+  type        = bool
+  default     = false
+}
+
+variable "module_depends_on" {
+  description = "List of modules or resources to depend on before annotating KSA. If multiple, all items must be the same type."
+  type        = list(any)
+  default     = []
+}
+
+variable "additional_projects" {
+  description = "A list of roles to be added to the created service account for additional projects"
+  type        = map(list(string))
+  default     = {}
+}
+
+variable "gcp_sa_display_name" {
+  description = "The Google service account display name; if null, a default string will be used"
+  type        = string
+  nullable    = true
+  default     = null
+
+  validation {
+    condition     = var.gcp_sa_display_name == null ? true : length(var.gcp_sa_display_name) <= 100
+    error_message = "The Google service account display name must be at most 100 characters"
+  }
+}
+
+variable "gcp_sa_description" {
+  description = "The Service Google service account desciption; if null, will be left out"
+  type        = string
+  nullable    = true
+  default     = null
+
+  validation {
+    condition     = var.gcp_sa_description == null ? true : length(var.gcp_sa_description) <= 256
+    error_message = "The Google service account description must be at most 256 characters"
+  }
+}
+
+variable "gcp_sa_create_ignore_already_exists" {
+  description = "If set to true, skip service account creation if a service account with the same email already exists."
+  type        = bool
+  default     = null
 }

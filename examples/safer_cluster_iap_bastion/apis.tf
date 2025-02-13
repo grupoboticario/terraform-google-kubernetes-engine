@@ -16,12 +16,18 @@
 
 module "enabled_google_apis" {
   source  = "terraform-google-modules/project-factory/google//modules/project_services"
-  version = "~> 10.0"
+  version = "~> 18.0"
 
   project_id                  = var.project_id
   disable_services_on_destroy = false
+  activate_api_identities = [{
+    api = "container.googleapis.com",
+    roles = ["roles/cloudkms.cryptoKeyDecrypter",
+    "roles/cloudkms.cryptoKeyEncrypter"],
+  }]
 
   activate_apis = [
+    "serviceusage.googleapis.com",
     "iam.googleapis.com",
     "compute.googleapis.com",
     "logging.googleapis.com",
@@ -31,5 +37,6 @@ module "enabled_google_apis" {
     "binaryauthorization.googleapis.com",
     "stackdriver.googleapis.com",
     "iap.googleapis.com",
+    "cloudkms.googleapis.com",
   ]
 }

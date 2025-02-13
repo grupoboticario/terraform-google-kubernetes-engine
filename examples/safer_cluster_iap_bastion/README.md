@@ -4,6 +4,8 @@ This end to end example aims to showcase access patterns to a [Safer Cluster](..
 
 Additionally we deploy a [tinyproxy](https://tinyproxy.github.io/) daemon which allows `kubectl` commands to be piped through the bastion host allowing ease of development from a local machine with the security of GKE Private Clusters.
 
+GKE Autopilot clusters are deployed with Application-layer Secrets Encryption that protects your secrets in etcd with a key you manage in [Cloud KMS](https://github.com/terraform-google-modules/terraform-google-kms/blob/master/README.md).
+
 ## Setup
 
 To deploy this example:
@@ -41,7 +43,6 @@ To deploy this example:
 | cluster\_name | The name of the cluster | `string` | `"safer-cluster-iap-bastion"` | no |
 | ip\_range\_pods\_name | The secondary ip range to use for pods | `string` | `"ip-range-pods"` | no |
 | ip\_range\_services\_name | The secondary ip range to use for pods | `string` | `"ip-range-svc"` | no |
-| ip\_source\_ranges\_ssh | Additional source ranges to allow for ssh to bastion host. 35.235.240.0/20 allowed by default for IAP tunnel. | `list(string)` | `[]` | no |
 | network\_name | The name of the network being created to host the cluster in | `string` | `"safer-cluster-network"` | no |
 | project\_id | The project ID to host the cluster in | `string` | n/a | yes |
 | region | The region to host the cluster in | `string` | `"us-central1"` | no |
@@ -59,7 +60,11 @@ To deploy this example:
 | ca\_certificate | Cluster ca certificate (base64 encoded) |
 | cluster\_name | Cluster name |
 | endpoint | Cluster endpoint |
+| endpoint\_dns | Cluster endpoint DNS |
 | get\_credentials\_command | gcloud get-credentials command to generate kubeconfig for the private cluster |
+| keyring | The name of the keyring. |
+| keyring\_resource | The location of the keyring. |
+| keys | Map of key name => key self link. |
 | location | Cluster location (region if regional cluster, zone if zonal cluster) |
 | master\_authorized\_networks\_config | Networks from which access to master is permitted |
 | network\_name | The name of the VPC being created |
@@ -67,4 +72,4 @@ To deploy this example:
 | router\_name | Name of the router that was created |
 | subnet\_name | The name of the VPC subnet being created |
 
- <!-- END OF PRE-COMMIT-TERRAFORM DOCS HOOK -->
+<!-- END OF PRE-COMMIT-TERRAFORM DOCS HOOK -->

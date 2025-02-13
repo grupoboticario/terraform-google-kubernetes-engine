@@ -21,7 +21,6 @@ resource "random_string" "suffix" {
 }
 
 provider "google" {
-  version = "~> 3.42.0"
   project = var.project_ids[0]
 }
 
@@ -33,7 +32,7 @@ resource "google_compute_network" "main" {
 resource "google_compute_subnetwork" "main" {
   name          = "cft-gke-test-${random_string.suffix.result}"
   ip_cidr_range = "10.0.0.0/17"
-  region        = var.region
+  region        = "us-west1"
   network       = google_compute_network.main.self_link
 
   secondary_ip_range {

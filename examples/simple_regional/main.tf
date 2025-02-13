@@ -18,11 +18,6 @@ locals {
   cluster_type = "simple-regional"
 }
 
-provider "google" {
-  version = "~> 3.42.0"
-  region  = var.region
-}
-
 data "google_client_config" "default" {}
 
 provider "kubernetes" {
@@ -32,7 +27,9 @@ provider "kubernetes" {
 }
 
 module "gke" {
-  source                      = "../../"
+  source  = "terraform-google-modules/kubernetes-engine/google"
+  version = "~> 36.0"
+
   project_id                  = var.project_id
   name                        = "${local.cluster_type}-cluster${var.cluster_name_suffix}"
   regional                    = true
@@ -43,6 +40,10 @@ module "gke" {
   ip_range_services           = var.ip_range_services
   create_service_account      = false
   service_account             = var.compute_engine_service_account
+  enable_cost_allocation      = true
   enable_binary_authorization = var.enable_binary_authorization
-  skip_provisioners           = var.skip_provisioners
+  gcs_fuse_csi_driver         = true
+  fleet_project               = var.project_id
+  deletion_protection         = false
+  stateful_ha                 = true
 }

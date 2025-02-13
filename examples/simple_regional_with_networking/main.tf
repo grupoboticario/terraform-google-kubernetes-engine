@@ -14,10 +14,6 @@
  * limitations under the License.
  */
 
-provider "google" {
-  version = "~> 3.45.0"
-}
-
 data "google_client_config" "default" {}
 
 provider "kubernetes" {
@@ -27,8 +23,9 @@ provider "kubernetes" {
 }
 
 module "gcp-network" {
-  source       = "terraform-google-modules/network/google"
-  version      = "~> 3.1"
+  source  = "terraform-google-modules/network/google"
+  version = ">= 7.5"
+
   project_id   = var.project_id
   network_name = var.network
 
@@ -55,7 +52,9 @@ module "gcp-network" {
 }
 
 module "gke" {
-  source                 = "../../"
+  source  = "terraform-google-modules/kubernetes-engine/google"
+  version = "~> 36.0"
+
   project_id             = var.project_id
   name                   = var.cluster_name
   regional               = true
@@ -65,4 +64,5 @@ module "gke" {
   ip_range_pods          = var.ip_range_pods_name
   ip_range_services      = var.ip_range_services_name
   create_service_account = true
+  deletion_protection    = false
 }

@@ -1,5 +1,5 @@
 /**
- * Copyright 2018 Google LLC
+ * Copyright 2022 Google LLC
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -50,6 +50,11 @@ output "endpoint" {
   sensitive   = true
   description = "Cluster endpoint"
   value       = module.gke.endpoint
+}
+
+output "endpoint_dns" {
+  description = "Cluster endpoint DNS"
+  value       = module.gke.endpoint_dns
 }
 
 output "min_master_version" {
@@ -104,7 +109,7 @@ output "node_pools_names" {
 }
 
 output "node_pools_versions" {
-  description = "List of node pools versions"
+  description = "Node pool versions by node pool name"
   value       = module.gke.node_pools_versions
 }
 
@@ -121,4 +126,9 @@ output "master_ipv4_cidr_block" {
 output "peering_name" {
   description = "The name of the peering between this cluster and the Google owned VPC."
   value       = module.gke.peering_name
+}
+
+output "enable_mesh_certificates" {
+  description = "Mesh certificate configuration value"
+  value       = var.enable_mesh_certificates
 }

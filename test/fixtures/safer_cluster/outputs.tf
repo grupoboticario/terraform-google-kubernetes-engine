@@ -36,8 +36,7 @@ output "master_kubernetes_version" {
 }
 
 output "kubernetes_endpoint" {
-  sensitive = true
-  value     = module.example.kubernetes_endpoint
+  value = module.example.kubernetes_endpoint
 }
 
 output "client_token" {
@@ -54,4 +53,8 @@ output "ca_certificate" {
 output "service_account" {
   description = "The service account to default running nodes as if not overridden in `node_pools`."
   value       = module.example.service_account
+}
+
+output "explicit_k8s_version" {
+  value = module.example.explicit_k8s_version
 }

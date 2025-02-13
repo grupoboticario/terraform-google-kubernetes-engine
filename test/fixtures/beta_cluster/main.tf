@@ -27,7 +27,7 @@ resource "google_kms_key_ring" "db" {
 
 resource "google_kms_crypto_key" "db" {
   name     = local.name
-  key_ring = google_kms_key_ring.db.self_link
+  key_ring = google_kms_key_ring.db.id
 }
 
 module "this" {
@@ -44,26 +44,28 @@ module "this" {
   ip_range_services              = google_compute_subnetwork.main.secondary_ip_range[1].range_name
   compute_engine_service_account = "create"
 
-  // Beta features
-  istio = true
+  node_pools = [
+    {
+      name         = "pool-01"
+      machine_type = "n2-standard-2"
+      min_count    = 1
+      max_count    = 2
+      auto_upgrade = true
+      // Beta feature
+      placement_policy = "COMPACT"
+    },
+  ]
 
   database_encryption = [{
     state    = "ENCRYPTED"
-    key_name = google_kms_crypto_key.db.self_link
+    key_name = google_kms_crypto_key.db.id
   }]
-
-  cloudrun = true
 
   dns_cache = true
 
   gce_pd_csi_driver = true
 
   enable_binary_authorization = true
-
-  enable_pod_security_policy = true
-
-  // Dataplane-V2 Feature
-  datapath_provider = "ADVANCED_DATAPATH"
 }
 
 data "google_client_config" "default" {

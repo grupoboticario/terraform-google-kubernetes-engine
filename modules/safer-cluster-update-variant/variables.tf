@@ -1,5 +1,5 @@
 /**
- * Copyright 2018 Google LLC
+ * Copyright 2022 Google LLC
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -73,8 +73,14 @@ variable "kubernetes_version" {
 
 variable "release_channel" {
   type        = string
-  description = "(Beta) The release channel of this cluster. Accepted values are `UNSPECIFIED`, `RAPID`, `REGULAR` and `STABLE`. Defaults to `REGULAR`."
+  description = "The release channel of this cluster. Accepted values are `UNSPECIFIED`, `RAPID`, `REGULAR` and `STABLE`. Defaults to `REGULAR`."
   default     = "REGULAR"
+}
+
+variable "gateway_api_channel" {
+  type        = string
+  description = "The gateway api channel of this cluster. Accepted values are `CHANNEL_STANDARD` and `CHANNEL_DISABLED`."
+  default     = null
 }
 
 variable "master_authorized_networks" {
@@ -95,10 +101,34 @@ variable "http_load_balancing" {
   default     = true
 }
 
+variable "datapath_provider" {
+  type        = string
+  description = "The desired datapath provider for this cluster. By default, `ADVANCED_DATAPATH` enables Dataplane-V2 feature. `DATAPATH_PROVIDER_UNSPECIFIED` enables the IPTables-based kube-proxy implementation as a fallback since upgrading to V2 requires a cluster re-creation."
+  default     = "ADVANCED_DATAPATH"
+}
+
 variable "maintenance_start_time" {
   type        = string
   description = "Time window specified for daily maintenance operations in RFC3339 format"
   default     = "05:00"
+}
+
+variable "maintenance_exclusions" {
+  type        = list(object({ name = string, start_time = string, end_time = string, exclusion_scope = string }))
+  description = "List of maintenance exclusions. A cluster can have up to three"
+  default     = []
+}
+
+variable "maintenance_end_time" {
+  type        = string
+  description = "Time window specified for recurring maintenance operations in RFC3339 format"
+  default     = ""
+}
+
+variable "maintenance_recurrence" {
+  type        = string
+  description = "Frequency of the recurring maintenance window in RFC5545 format."
+  default     = ""
 }
 
 variable "ip_range_pods" {
@@ -128,9 +158,25 @@ variable "node_pools" {
   ]
 }
 
+variable "windows_node_pools" {
+  type        = list(map(string))
+  description = "List of maps containing node pools"
+  default     = []
+}
+
 variable "node_pools_labels" {
   type        = map(map(string))
   description = "Map of maps containing node labels by node-pool name"
+
+  default = {
+    all               = {}
+    default-node-pool = {}
+  }
+}
+
+variable "node_pools_resource_labels" {
+  type        = map(map(string))
+  description = "Map of maps containing resource labels by node-pool name"
 
   default = {
     all               = {}
@@ -178,6 +224,32 @@ variable "node_pools_oauth_scopes" {
   }
 }
 
+variable "cluster_autoscaling" {
+  type = object({
+    enabled             = bool
+    autoscaling_profile = string
+    min_cpu_cores       = number
+    max_cpu_cores       = number
+    min_memory_gb       = number
+    max_memory_gb       = number
+    gpu_resources       = list(object({ resource_type = string, minimum = number, maximum = number }))
+    auto_repair         = bool
+    auto_upgrade        = bool
+  })
+  default = {
+    enabled             = false
+    autoscaling_profile = "BALANCED"
+    max_cpu_cores       = 0
+    min_cpu_cores       = 0
+    max_memory_gb       = 0
+    min_memory_gb       = 0
+    gpu_resources       = []
+    auto_repair         = true
+    auto_upgrade        = true
+  }
+  description = "Cluster autoscaling configuration. See [more details](https://cloud.google.com/kubernetes-engine/docs/reference/rest/v1beta1/projects.locations.clusters#clusterautoscaling)"
+}
+
 variable "stub_domains" {
   type        = map(list(string))
   description = "Map of stub domains and their resolvers to forward DNS queries for a certain domain to an external DNS server"
@@ -200,6 +272,18 @@ variable "monitoring_service" {
   type        = string
   description = "The monitoring service that the cluster should write metrics to. Automatically send metrics from pods in the cluster to the Google Cloud Monitoring API. VM metrics will be collected by Google Compute Engine regardless of this setting Available options include monitoring.googleapis.com, monitoring.googleapis.com/kubernetes (beta) and none"
   default     = "monitoring.googleapis.com/kubernetes"
+}
+
+variable "monitoring_enable_managed_prometheus" {
+  type        = bool
+  description = "(Beta) Configuration for Managed Service for Prometheus. Whether or not the managed collection is enabled."
+  default     = false
+}
+
+variable "monitoring_enabled_components" {
+  type        = list(string)
+  description = "List of services to monitor: SYSTEM_COMPONENTS, WORKLOADS. Empty list is default GKE configuration."
+  default     = []
 }
 
 variable "grant_registry_access" {
@@ -228,6 +312,7 @@ variable "master_ipv4_cidr_block" {
 
 variable "istio" {
   description = "(Beta) Enable Istio addon"
+  type        = bool
   default     = false
 }
 
@@ -243,8 +328,27 @@ variable "dns_cache" {
   default     = false
 }
 
+variable "cluster_dns_provider" {
+  type        = string
+  description = "Which in-cluster DNS provider should be used. PROVIDER_UNSPECIFIED (default) or PLATFORM_DEFAULT or CLOUD_DNS."
+  default     = "PROVIDER_UNSPECIFIED"
+}
+
+variable "cluster_dns_scope" {
+  type        = string
+  description = "The scope of access to cluster DNS records. DNS_SCOPE_UNSPECIFIED (default) or CLUSTER_SCOPE or VPC_SCOPE. "
+  default     = "DNS_SCOPE_UNSPECIFIED"
+}
+
+variable "cluster_dns_domain" {
+  type        = string
+  description = "The suffix used for all cluster service records."
+  default     = ""
+}
+
 variable "default_max_pods_per_node" {
   description = "The maximum number of pods to schedule per node"
+  type        = number
   default     = 110
 }
 
@@ -259,6 +363,7 @@ variable "database_encryption" {
 
 variable "cloudrun" {
   description = "(Beta) Enable CloudRun addon"
+  type        = bool
   default     = false
 }
 
@@ -268,16 +373,10 @@ variable "resource_usage_export_dataset_id" {
   default     = ""
 }
 
-variable "enable_network_egress_export" {
+variable "enable_cost_allocation" {
   type        = bool
-  description = "Whether to enable network egress metering for this cluster. If enabled, a daemonset will be created in the cluster to meter network egress traffic."
+  description = "Enables Cost Allocation Feature and the cluster name and namespace of your GKE workloads appear in the labels field of the billing export to BigQuery"
   default     = false
-}
-
-variable "enable_resource_consumption_export" {
-  type        = bool
-  description = "Whether to enable resource consumption metering on this cluster. When enabled, a table will be created in the resource export BigQuery dataset to store resource consumption data. The resulting table can be joined with the resource usage table or with BigQuery billing export."
-  default     = true
 }
 
 variable "sandbox_enabled" {
@@ -289,6 +388,12 @@ variable "sandbox_enabled" {
 variable "enable_intranode_visibility" {
   type        = bool
   description = "Whether Intra-node visibility is enabled for this cluster. This makes same node pod to pod traffic visible for VPC network"
+  default     = false
+}
+
+variable "enable_l4_ilb_subsetting" {
+  type        = bool
+  description = "Enable L4 ILB Subsetting on the cluster"
   default     = false
 }
 
@@ -306,8 +411,14 @@ variable "authenticator_security_group" {
 
 variable "compute_engine_service_account" {
   type        = string
-  description = "Use the given service account for nodes rather than creating a new dedicated service account."
+  description = "Use the given service account for nodes rather than creating a new dedicated service account. If set then also set var.create_service_account to false to avoid 'value depends on resource attributes that cannot be determined until apply' errors."
   default     = ""
+}
+
+variable "create_service_account" {
+  type        = bool
+  description = "Defines if service account specified to run nodes should be created. Explicitly set to false if var.compute_engine_service_account is set to avoid 'value depends on resource attributes that cannot be determined until apply' errors."
+  default     = true
 }
 
 variable "enable_shielded_nodes" {
@@ -322,12 +433,6 @@ variable "enable_private_endpoint" {
   default     = true
 }
 
-variable "skip_provisioners" {
-  type        = bool
-  description = "Flag to skip all local-exec provisioners. It breaks `stub_domains` and `upstream_nameservers` variables functionality."
-  default     = false
-}
-
 variable "enable_pod_security_policy" {
   type        = bool
   description = "enabled - Enable the PodSecurityPolicy controller for this cluster. If enabled, pods must be valid under a PodSecurityPolicy to be created."
@@ -338,6 +443,12 @@ variable "gce_pd_csi_driver" {
   type        = bool
   description = "(Beta) Whether this cluster should enable the Google Compute Engine Persistent Disk Container Storage Interface (CSI) Driver."
   default     = true
+}
+
+variable "filestore_csi_driver" {
+  type        = bool
+  description = "The status of the Filestore CSI driver addon, which allows the usage of filestore instance as volumes"
+  default     = false
 }
 
 variable "add_cluster_firewall_rules" {
@@ -360,8 +471,26 @@ variable "firewall_inbound_ports" {
 
 variable "config_connector" {
   type        = bool
-  description = "(Beta) Whether ConfigConnector is enabled for this cluster."
+  description = "Whether ConfigConnector is enabled for this cluster."
   default     = false
+}
+
+variable "gke_backup_agent_config" {
+  type        = bool
+  description = "(Beta) Whether Backup for GKE agent is enabled for this cluster."
+  default     = false
+}
+
+variable "security_posture_mode" {
+  description = "Security posture mode.  Accepted values are `DISABLED` and `BASIC`. Defaults to `DISABLED`."
+  type        = string
+  default     = "DISABLED"
+}
+
+variable "security_posture_vulnerability_mode" {
+  description = "Security posture vulnerability mode.  Accepted values are `VULNERABILITY_DISABLED`, `VULNERABILITY_BASIC`, and `VULNERABILITY_ENTERPRISE`"
+  type        = string
+  default     = null
 }
 
 variable "disable_default_snat" {
@@ -374,4 +503,50 @@ variable "notification_config_topic" {
   type        = string
   description = "The desired Pub/Sub topic to which notifications will be sent by GKE. Format is projects/{project}/topics/{topic}."
   default     = ""
+}
+
+variable "timeouts" {
+  type        = map(string)
+  description = "Timeout for cluster operations."
+  default     = {}
+  validation {
+    condition     = !contains([for t in keys(var.timeouts) : contains(["create", "update", "delete"], t)], false)
+    error_message = "Only create, update, delete timeouts can be specified."
+  }
+}
+
+variable "enable_gcfs" {
+  type        = bool
+  description = "Enable image streaming on cluster level."
+  default     = false
+}
+
+variable "enable_mesh_certificates" {
+  type        = bool
+  default     = false
+  description = "Controls the issuance of workload mTLS certificates. When enabled the GKE Workload Identity Certificates controller and node agent will be deployed in the cluster. Requires Workload Identity."
+}
+
+variable "workload_vulnerability_mode" {
+  description = "(beta) Vulnerability mode."
+  type        = string
+  default     = ""
+}
+
+variable "workload_config_audit_mode" {
+  description = "(beta) Workload config audit mode."
+  type        = string
+  default     = "DISABLED"
+}
+
+variable "deletion_protection" {
+  type        = bool
+  description = "Whether or not to allow Terraform to destroy the cluster."
+  default     = true
+}
+
+variable "enable_confidential_nodes" {
+  type        = bool
+  description = "An optional flag to enable confidential node config."
+  default     = false
 }

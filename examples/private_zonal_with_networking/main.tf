@@ -23,8 +23,9 @@ provider "kubernetes" {
 }
 
 module "gcp-network" {
-  source       = "terraform-google-modules/network/google"
-  version      = "~> 3.1"
+  source  = "terraform-google-modules/network/google"
+  version = ">= 7.5"
+
   project_id   = var.project_id
   network_name = var.network
 
@@ -59,7 +60,9 @@ data "google_compute_subnetwork" "subnetwork" {
 }
 
 module "gke" {
-  source     = "../../modules/private-cluster/"
+  source  = "terraform-google-modules/kubernetes-engine/google//modules/private-cluster"
+  version = "~> 36.0"
+
   project_id = var.project_id
   name       = var.cluster_name
   regional   = false
@@ -74,6 +77,9 @@ module "gke" {
   enable_private_endpoint = true
   enable_private_nodes    = true
   master_ipv4_cidr_block  = "172.16.0.0/28"
+  deletion_protection     = false
+
+  insecure_kubelet_readonly_port_enabled = false
 
   master_authorized_networks = [
     {

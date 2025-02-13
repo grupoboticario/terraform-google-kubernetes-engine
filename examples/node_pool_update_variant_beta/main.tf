@@ -19,7 +19,6 @@ locals {
 }
 
 provider "google-beta" {
-  version     = "~> 3.79.0"
   credentials = file(var.credentials_path)
   region      = var.region
 }
@@ -39,7 +38,9 @@ provider "kubernetes" {
 }
 
 module "gke" {
-  source                  = "../../modules/beta-private-cluster-update-variant"
+  source  = "terraform-google-modules/kubernetes-engine/google//modules/beta-private-cluster-update-variant"
+  version = "~> 36.0"
+
   project_id              = var.project_id
   name                    = "${local.cluster_type}-cluster${var.cluster_name_suffix}"
   regional                = false
@@ -54,6 +55,7 @@ module "gke" {
   enable_private_endpoint = true
   enable_private_nodes    = true
   master_ipv4_cidr_block  = "172.16.0.0/28"
+  deletion_protection     = false
 
   master_authorized_networks = [
     {
@@ -79,7 +81,6 @@ module "gke" {
       disk_type         = "pd-standard"
       accelerator_count = 1
       accelerator_type  = "nvidia-tesla-p4"
-      image_type        = "COS"
       auto_repair       = false
       service_account   = var.compute_engine_service_account
     },

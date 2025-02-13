@@ -18,11 +18,6 @@ locals {
   cluster_type = "workload-metadata-private"
 }
 
-provider "google-beta" {
-  version = "~> 3.79.0"
-  region  = var.region
-}
-
 data "google_client_config" "default" {}
 
 provider "kubernetes" {
@@ -38,7 +33,9 @@ data "google_compute_subnetwork" "subnetwork" {
 }
 
 module "gke" {
-  source                  = "../../modules/private-cluster/"
+  source  = "terraform-google-modules/kubernetes-engine/google//modules/private-cluster"
+  version = "~> 36.0"
+
   project_id              = var.project_id
   name                    = "${local.cluster_type}-cluster${var.cluster_name_suffix}"
   regional                = false
@@ -54,7 +51,8 @@ module "gke" {
   enable_private_endpoint = true
   enable_private_nodes    = true
   master_ipv4_cidr_block  = "172.16.0.0/28"
-  node_metadata           = "SECURE"
+  node_metadata           = "GKE_METADATA"
+  deletion_protection     = false
 
   master_authorized_networks = [
     {

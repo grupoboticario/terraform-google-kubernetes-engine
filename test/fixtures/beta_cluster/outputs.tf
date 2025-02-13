@@ -60,19 +60,7 @@ output "master_kubernetes_version" {
 }
 
 output "kubernetes_endpoint" {
-  sensitive = true
-  value     = module.this.kubernetes_endpoint
-}
-
-output "client_token" {
-  sensitive = true
-  value     = base64encode(data.google_client_config.default.access_token)
-}
-
-output "ca_certificate" {
-  description = "The cluster CA certificate"
-  value       = module.this.ca_certificate
-  sensitive   = true
+  value = module.this.kubernetes_endpoint
 }
 
 output "service_account" {
@@ -81,9 +69,5 @@ output "service_account" {
 }
 
 output "database_encryption_key_name" {
-  value = google_kms_crypto_key.db.self_link
-}
-
-output "identity_namespace" {
-  value = module.this.identity_namespace
+  value = google_kms_crypto_key.db.id
 }

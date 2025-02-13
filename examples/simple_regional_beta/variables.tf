@@ -47,16 +47,6 @@ variable "compute_engine_service_account" {
   description = "Service account to associate to the nodes in the cluster"
 }
 
-variable "istio" {
-  description = "Boolean to enable / disable Istio"
-  default     = true
-}
-
-variable "cloudrun" {
-  description = "Boolean to enable / disable CloudRun"
-  default     = true
-}
-
 variable "dns_cache" {
   type        = bool
   description = "(Beta) The status of the NodeLocal DNSCache addon."
@@ -122,10 +112,4 @@ variable "regional" {
   type        = bool
   description = "Whether is a regional cluster (zonal cluster if set false. WARNING: changing this after cluster creation is destructive!)"
   default     = true
-}
-
-variable "datapath_provider" {
-  type        = string
-  description = "The desired datapath provider for this cluster. By default, `DATAPATH_PROVIDER_UNSPECIFIED` enables the IPTables-based kube-proxy implementation. `ADVANCED_DATAPATH` enables Dataplane-V2 feature."
-  default     = "DATAPATH_PROVIDER_UNSPECIFIED"
 }

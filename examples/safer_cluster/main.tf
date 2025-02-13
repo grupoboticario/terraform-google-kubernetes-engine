@@ -30,14 +30,6 @@ locals {
   subnet_names           = [for subnet_self_link in module.gcp-network.subnets_self_links : split("/", subnet_self_link)[length(split("/", subnet_self_link)) - 1]]
 }
 
-provider "google" {
-  version = "~> 3.42.0"
-}
-
-provider "google-beta" {
-  version = "~> 3.79.0"
-}
-
 data "google_client_config" "default" {}
 
 provider "kubernetes" {
@@ -46,8 +38,22 @@ provider "kubernetes" {
   cluster_ca_certificate = base64decode(module.gke.ca_certificate)
 }
 
+// A random valid k8s version is retrived
+// to specify as an explicit version.
+data "google_container_engine_versions" "current" {
+  project  = var.project_id
+  location = var.region
+}
+
+resource "random_shuffle" "version" {
+  input        = data.google_container_engine_versions.current.valid_master_versions
+  result_count = 1
+}
+
 module "gke" {
-  source                     = "../../modules/safer-cluster/"
+  source  = "terraform-google-modules/kubernetes-engine/google//modules/safer-cluster"
+  version = "~> 36.0"
+
   project_id                 = var.project_id
   name                       = "${local.cluster_type}-cluster-${random_string.suffix.result}"
   regional                   = true
@@ -59,6 +65,9 @@ module "gke" {
   master_ipv4_cidr_block     = "172.16.0.0/28"
   add_cluster_firewall_rules = true
   firewall_inbound_ports     = ["9443", "15017"]
+  kubernetes_version         = random_shuffle.version.result[0]
+  release_channel            = "UNSPECIFIED"
+  deletion_protection        = false
 
   master_authorized_networks = [
     {
@@ -66,9 +75,6 @@ module "gke" {
       display_name = "VPC"
     },
   ]
-
-  istio    = true
-  cloudrun = true
 
   notification_config_topic = google_pubsub_topic.updates.id
 }

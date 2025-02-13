@@ -14,11 +14,6 @@
  * limitations under the License.
  */
 
-provider "google" {
-  version = "~> 3.42.0"
-  region  = var.region
-}
-
 data "google_client_config" "default" {}
 
 provider "kubernetes" {
@@ -34,7 +29,8 @@ data "google_compute_subnetwork" "subnetwork" {
 }
 
 module "gke" {
-  source = "../../modules/private-cluster"
+  source  = "terraform-google-modules/kubernetes-engine/google//modules/private-cluster"
+  version = "~> 36.0"
 
   ip_range_pods     = var.ip_range_pods
   ip_range_services = var.ip_range_services
@@ -47,6 +43,7 @@ module "gke" {
   deploy_using_private_endpoint = true
   enable_private_endpoint       = false
   enable_private_nodes          = true
+  deletion_protection           = false
 
   master_authorized_networks = [
     {
